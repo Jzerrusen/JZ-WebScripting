@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Weather Search</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: lightblue;
+      text-align: center;
+    }
+
+    h1 {
+      color: darkblue;
+    }
+
+    input {
+      padding: 8px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+
+    button {
+      padding: 8px;
+      font-size: 16px;
+      background-color: orange;
+      border: 2px solid black;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: yellow;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .error {
+      color: red;
+    }
+
+    #results {
+      margin-top: 20px;
+      border: 2px dashed black;
+      padding: 10px;
+      background-color: white;
+      display: inline-block;
+      min-width: 200px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Weather Search</h1>
+<p>Search a city. 👍</p>
+
+<input id="cityInput" placeholder="ex. Chicago">
+<button onclick="searchWeather()">Go</button>
+
+<div id="status"></div>
+<div id="results"></div>
+
+<script>
+  async function searchWeather() {
+    const input = document.getElementById("cityInput");
+    const status = document.getElementById("status");
+    const results = document.getElementById("results");
+
+    const city = input.value.trim();
+
+    // blank input handling
+    if (city === "") {
+      status.textContent = "you forgot to type something";
+      status.className = "error";
+      results.innerHTML = "";
+      return;
+    }
+
+    status.textContent = "loading...";
+    status.className = "";
+    results.innerHTML = "";
+
+    try {
+      // get coordinates
+      const geoRes = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}`
+      );
+
+      if (!geoRes.ok) throw new Error("problem finding city");
+
+      const geoData = await geoRes.json();
+
+      if (!geoData.results) {
+        throw new Error("city not found");
+      }
+
+      const place = geoData.results[0];
+
+      // get weather
+      const weatherRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current_weather=true`
+      );
+
+      if (!weatherRes.ok) throw new Error("weather broke");
+
+      const weatherData = await weatherRes.json();
+
+      const w = weatherData.current_weather;
+
+      // show results (3+ pieces of data)
+      results.innerHTML = `
+        <h3>${place.name}</h3>
+        <p>temp: ${w.temperature}°C</p>
+        <p>wind: ${w.windspeed} km/h</p>
+        <p>code: ${w.weathercode}</p>
+        <p>time: ${w.time}</p>
+      `;
+
+      status.textContent = "done 👍";
+
+    } catch (err) {
+      status.textContent = "error: " + err.message;
+      status.className = "error";
+    }
+  }
+</script>
+
+</body>
+</html>
