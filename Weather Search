@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Weather Search</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef2f7;
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .app {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 500px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px;
+      cursor: pointer;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+
+    .status {
+      margin-top: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .results {
+      margin-top: 20px;
+    }
+
+    .card {
+      padding: 15px;
+      border-radius: 8px;
+      background: #f9fafc;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <h1>🌤 Weather Search</h1>
+  <p>Enter a city name to get current weather</p>
+
+  <div class="controls">
+    <input id="searchInput" type="text" placeholder="Enter city (e.g. Chicago)" />
+    <button id="searchBtn">Search</button>
+  </div>
+
+  <div id="status" class="status"></div>
+  <div id="results" class="results"></div>
+</div>
+
+<script>
+  const input = document.getElementById("searchInput");
+  const button = document.getElementById("searchBtn");
+  const statusDiv = document.getElementById("status");
+  const resultsDiv = document.getElementById("results");
+
+  async function getWeather(city) {
+    statusDiv.textContent = "Loading...";
+    statusDiv.className = "status";
+    resultsDiv.innerHTML = "";
+
+    try {
+      // Step 1: Convert city → coordinates
+      const geoRes = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`
+      );
+
+      if (!geoRes.ok) throw new Error("Failed to find location");
+
+      const geoData = await geoRes.json();
+
+      if (!geoData.results || geoData.results.length === 0) {
+        throw new Error("City not found");
+      }
+
+      const { latitude, longitude, name, country } = geoData.results[0];
+
+      // Step 2: Get weather data
+      const weatherRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`
+      );
+
+      if (!weatherRes.ok) throw new Error("Failed to fetch weather");
+
+      const weatherData = await weatherRes.json();
+
+      displayWeather(name, country, weatherData.current_weather);
+
+      statusDiv.textContent = "";
+
+    } catch (error) {
+      statusDiv.textContent = "Error: " + error.message;
+      statusDiv.className = "status error";
+    }
+  }
+
+  function displayWeather(city, country, weather) {
+    if (!weather) {
+      statusDiv.textContent = "No weather data available.";
+      return;
+    }
+
+    resultsDiv.innerHTML = `
+      <div class="card">
+        <h2>${city}, ${country}</h2>
+        <p><strong>Temperature:</strong> ${weather.temperature}°C</p>
+        <p><strong>Wind Speed:</strong> ${weather.windspeed} km/h</p>
+        <p><strong>Weather Code:</strong> ${weather.weathercode}</p>
+        <p><strong>Time:</strong> ${weather.time}</p>
+      </div>
+    `;
+  }
+
+  button.addEventListener("click", () => {
+    const city = input.value.trim();
+
+    // Handle blank input
+    if (!city) {
+      statusDiv.textContent = "Please enter a city name.";
+      statusDiv.className = "status error";
+      return;
+    }
+
+    getWeather(city);
+  });
+
+  // Enter key support
+  input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      button.click();
+    }
+  });
+</script>
+
+</body>
+</html>
