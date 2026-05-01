@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flashcard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Flashcards</h1>
+
+<div id="app">
+
+    <div id="form">
+        <input id="questionInput" placeholder="Question">
+        <input id="answerInput" placeholder="Answer">
+        <button onclick="addCard()">Add Card</button>
+        <p id="error"></p>
+    </div>
+
+    <div id="cardContainer">
+        <div id="card" onclick="flipCard()">
+            <p id="cardText">No cards yet</p>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button onclick="prevCard()">Prev</button>
+        <button onclick="nextCard()">Next</button>
+        <button onclick="deleteCard()">Delete</button>
+    </div>
+
+    <p id="progress">0 / 0</p>
+
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
